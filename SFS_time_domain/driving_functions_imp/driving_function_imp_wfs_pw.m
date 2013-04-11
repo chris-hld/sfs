@@ -75,7 +75,7 @@ dimension = conf.dimension;
 %% ===== Computation =====================================================
 
 % Get the delay and weighting factors
-if strcmp('2D',dimension) || strcmp('3D',dimension)
+if strcmp('2D',dimension) 
     to_be_implemented;
 elseif strcmp('2.5D',dimension)
     % Reference point
@@ -86,13 +86,37 @@ elseif strcmp('2.5D',dimension)
     %
     g0 = sqrt(2*pi*vector_norm(xref-x0,2));
     % --------------------------------------------------------------------
-    % d_2.5D using a plane wave as source model
+    % d_2.5D using a plane wave as source model:
     %
-    % d_2.5D(x0,t) = h(t) * 2 g0 nk nx0 delta(t + 1/c nk x0)
-    % 
+    % d_2.5D(x0,t) = h(t) * 2 g0 <nk,n(x0)> delta(t - (<nk,x0> 1/c))
+    %
+    % '*' denotes the convolution and <,> the scalar product. If there
+    % is no sign between two arguments then it is a simple multiplication.
+    %
     % Delay and amplitude weight
     delay = 1/c .* vector_product(nk,x0,2);
     weight = 2*g0 .* vector_product(nk,nx0,2);
+    
+elseif strcmp('3D',dimension)
+    % 3D: no correction factor necessary
+    %
+    % weights and surface weights for 3D grid
+    surface_weights = x0(:,4);
+    weights = x0(:,5);
+    %
+    % use only the first 3 rows of x0. Theses are the x-,y-,z-coordinates.
+    x0 = x0(:,1:3);
+    %
+    % d_3D using plane wave as source model:
+    %
+    % d_3D(x0,t) = h(t) * 2 <nk,n(x0)> delta(t - (<nk,x0> 1/c))    
+    %
+    % '*' denotes the convolution and <,> the scalar product. If there
+    % is no sign between two arguments then it is a simple multiplication.
+    %
+    % Delay and amplitude weight
+    delay = 1/c * vector_product(nk,x0,2);
+    weight = 2 .* vector_product(nk,nx0,2).* surface_weights.* weights;
 else
     error('%s: the dimension %s is unknown.',upper(mfilename),dimension);
 end

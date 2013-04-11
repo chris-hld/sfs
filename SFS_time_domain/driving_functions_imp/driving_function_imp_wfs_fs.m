@@ -75,7 +75,7 @@ dimension = conf.dimension;
 %% ===== Computation =====================================================
 
 % Get the delay and weighting factors
-if strcmp('2D',dimension) || strcmp('3D',dimension)
+if strcmp('2D',dimension) 
     to_be_implemented;
 elseif strcmp('2.5D',dimension)
     % Reference point
@@ -88,15 +88,43 @@ elseif strcmp('2.5D',dimension)
     % --------------------------------------------------------------------
     % d_2.5D using a line sink as source model
     %
-    %                        g0 (x0-xs) nx0
-    % d_2.5D(x0,t) = h(t) * --- ------------- delta(t - 1/c |x0-xs|)
-    %                       2pi |x0-xs|^(3/2)
+    %                        g0  <(x0-xs),n(x0)>
+    % d_2.5D(x0,t) = h(t) * --- ---------------- delta(t - 1/c |x0-xs|)
+    %                       2pi  |x0-xs|^(3/2)
+    %
+    % '*' denotes the convolution and <,> the scalar product. If there
+    % is no sign between two arguments then it is a simple multiplication.
     %
     % r = |x0-xs|
     r = vector_norm(x0-xs,2);
     % Delay and amplitude weight
     delay =  -1/c .* r;
     weight = g0/(2*pi) .* vector_product(x0-xs,nx0,2) ./ r.^(3/2);
+    
+elseif strcmp('3D',dimension) 
+    % 3D: no correction factor necessary
+    %
+    % weights and surface weights for 3D grid
+    surface_weights = x0(:,4);
+    weights = x0(:,5);
+    %
+    % use only the first 3 rows of x0. Theses are the x-,y-,z-coordinates.
+    x0 = x0(:,1:3);
+    %
+    % d_3D using a line sink as source model
+    %
+    %                 <(x0-xs),n(x0)>   /    1       1   d  \ 
+    % d_3D(x0,t) = 2 ----------------- |  ------- + --- ---- | delta(t + (1/c |x0-xs|))
+    %                    |x0-xs|^2      \ |x0-xs|    c   dt /
+    % 
+    % <,> denotes the scalar product. If there
+    % is no sign between two arguments then it is a simple multiplication.
+    r = vector_norm(x0-xs,2);
+    % Delay and amplitude weight
+    delay = -r./c;
+    weight = (2.*vector_product(x0-xs,nx0,2)./(r.^2)).*(1./r + 1./c).*...
+             surface_weights.* weights;
+    
 else
     error('%s: the dimension %s is unknown.',upper(mfilename),dimension);
 end
