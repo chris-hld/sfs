@@ -77,7 +77,7 @@ c = conf.c;
 xref = position_vector(conf.xref);
 fs = conf.fs;
 usehpre = conf.usehpre;
-
+dimension = conf.dimension;
 
 %% ===== Computation =====================================================
 
@@ -89,8 +89,20 @@ else
 end
 
 % Secondary source positions and directions
-nx0 = x0(:,4:6);
-x0 = x0(:,1:3);
+
+if strcmp('2D',dimension) || strcmp('2.5D',dimension)
+    % for the 2D and 2.5D case no weights or surface weights are necessary
+    nx0 = x0(:,4:6);
+    x0 = x0(:,1:3);
+elseif strcmp('3D',dimension)
+    % apply weights and surface weights for the 3D case to the 4th and 5th
+    % row of x0
+    nx0 = x0(:,4:6);
+    x0 = [x0(:,1:3) x0(:,7:8)];
+else
+    % use a dimension which is available
+    error('%s: the dimension %s is unknown.',upper(mfilename),dimension);
+end
 
 % Source position
 xs = repmat(xs,[size(x0,1) 1]);
@@ -123,7 +135,7 @@ delay = delay-min(delay);
 % the delayline function cuts into the end of the driving signals in order to
 % delay them. NOTE: 800 is only a guess, we should check, if the value is large
 % enough for common cases.
-d_proto = [hpre' zeros(1,800)];
+d_proto = [hpre zeros(1,800)];
 d = zeros(length(d_proto),size(x0,1));
 for ii=1:size(x0,1)
     % Shift and weight prototype driving function
