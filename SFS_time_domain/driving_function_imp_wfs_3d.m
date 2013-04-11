@@ -102,7 +102,7 @@ xs = repmat(xs,[size(x0,1) 1]);
 if strcmp('pw',src)
     % === Plane Wave ===
     % Direction of plane wave
-    nxs = bsxfun(@rdivide,xs,norm(xs,2));
+    nxs = bsxfun(@rdivide,xs,vector_norm(xs,2));
     % Delay and amplitude weight
     delay = 1/c * vector_product(nxs,x0,2);
     weight = 2 .* vector_product(nxs,nx0,2).* surfaceWeights.* weights;
