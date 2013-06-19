@@ -101,9 +101,9 @@ elseif strcmp('3D',dimension)
     % 3D: no correction factor necessary
     %
     % weights and surface weights for 3D grid
-    surface_weights = x0(:,4);
-    weights = x0(:,5);
-    %
+%     surface_weights = x0(:,4);
+%     weights = x0(:,5);
+    surface_weights = cos(x0(:,3) / norm(x0(:,1:3)));
     % use only the first 3 rows of x0. Theses are the x-,y-,z-coordinates.
     x0 = x0(:,1:3);
     %
@@ -116,7 +116,7 @@ elseif strcmp('3D',dimension)
     %
     % Delay and amplitude weight
     delay = 1/c * vector_product(nk,x0,2);
-    weight = 2 .* vector_product(nk,nx0,2).* surface_weights.* weights;
+    weight = 2 .* vector_product(nk,nx0,2).*surface_weights;
 else
     error('%s: the dimension %s is unknown.',upper(mfilename),dimension);
 end

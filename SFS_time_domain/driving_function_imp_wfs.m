@@ -91,14 +91,11 @@ end
 % Secondary source positions and directions
 
 if strcmp('2D',dimension) || strcmp('2.5D',dimension)
-    % for the 2D and 2.5D case no weights or surface weights are necessary
     nx0 = x0(:,4:6);
     x0 = x0(:,1:3);
 elseif strcmp('3D',dimension)
-    % apply weights and surface weights for the 3D case to the 4th and 5th
-    % row of x0
     nx0 = x0(:,4:6);
-    x0 = [x0(:,1:3) x0(:,7:8)];
+    x0 =  x0(:,1:3);
 else
     % use a dimension which is available
     error('%s: the dimension %s is unknown.',upper(mfilename),dimension);

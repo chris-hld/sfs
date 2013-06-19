@@ -103,9 +103,9 @@ for ii = 1:size(x0_all,1)
     % Direction and position of secondary sources
     nx0 = x0_all(ii,4:6);
     x0 = x0_all(ii,1:3);
-    % Weights if needed
-    equallyPointsWeights = x0_all(ii,7);
-    surfaceWeights = x0_all(ii,8);
+    % surface weights
+    surfaceWeights = cos(x0(:,3) / norm(x0(:,1:3)));
+    
 
     if strcmp('pw',src)
 
@@ -124,8 +124,8 @@ for ii = 1:size(x0_all,1)
         %       simulate different time steps
    
         D(ii) = -2*nxs*nx0'./c * 1i*omega * exp(-1i*omega/c*(nxs*x0')).*...
-                equallyPointsWeights.*surfaceWeights;
-    
+                 surfaceWeights; 
+             
         elseif strcmp('ps',src)
         % ===== POINT SOURCE ===========================================
         %
@@ -141,7 +141,7 @@ for ii = 1:size(x0_all,1)
         % ----------------------------------------------------------------
     
             D(ii) =  -2*(x0-xs)*nx0' / norm(x0-xs).^2 *(1/norm(x0-xs)+1i*omega/c)*...
-                     exp(-1i*omega/c*norm(x0-xs)).*equallyPointsWeights.*surfaceWeights;
+                     exp(-1i*omega/c*norm(x0-xs)).*surfaceWeights; 
  
         elseif strcmp('fs',src)
         % ===== FOCUSED SOURCE ===========================================
@@ -158,7 +158,7 @@ for ii = 1:size(x0_all,1)
         % ----------------------------------------------------------------
 
             D(ii) =  -2*(x0-xs)*nx0' ./ norm(x0-xs)^2 *(1./norm(x0-xs)-1i*omega./c)*...
-                     exp(1i*omega./c*norm(x0-xs)).*equallyPointsWeights.*surfaceWeights;
+                     exp(1i*omega./c*norm(x0-xs)).*surfaceWeights;
 
     end
         

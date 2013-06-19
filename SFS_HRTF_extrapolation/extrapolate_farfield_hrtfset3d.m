@@ -1,15 +1,17 @@
-function irs_pw = extrapolate_farfield_hrtfset_3d(irs,conf)
+function far_field_irs = extrapolate_farfield_hrtfset_3d(irs,conf)
 %EXTRAPOLATE_FARFIELD_HRTFSET_3D far-field extrapolation of a given 3D HRTF 
 %                                dataset
 %
-%   Usage: irs_pw = extrapolate_farfield_hrtfset(irs,[conf])
+%   Usage: far_field_irs = extrapolate_farfield_hrtfset(irs,[conf])
 %
 %   Input parameters:
 %       irs     - IR data set for the virtual secondary sources
+%                 the irs dataset has to be stored as defined in 
+%                 https://dev.qu.tu-berlin.de/projects/measurements/wiki/IRs_file_format
 %       conf    - optional configuration struct (see SFS_config)
 %
 %   Output parameters:
-%       irs_pw  - IR data set extra polated to conation plane wave IRs
+%       far_field_irs  - IR data set extra polated to conation plane wave IRs
 %
 %   EXTRAPOLATE_FARFIELD_HRTFSET_3D(IRS) generates a far-field extrapolated 
 %   set of impulse responses, using the given irs set. Far-field means that 
@@ -70,65 +72,60 @@ fs = conf.fs;                   % sampling frequency
 %% ===== Variables ======================================================
 conf.array = 'spherical';
 conf.usetapwin = 0;
-conf.usehpre = 1;
+conf.usehpre = 0;
 conf.usefracdelay = 0;
 conf.xref = [0 0 0];
-x0 = zeros(length(irs.source_position),8);
+
+% define secondary source positions and calculate the direction vectors
+x0 = zeros(length(irs.source_position),6);
 x0(:,1:3) = irs.source_position.';
 x0(:,4:6) = direction_vector(x0(:,1:3),repmat(conf.xref,length(irs.source_position),1));
-x0(:,7) = (irs.distance.^2)' .* cos(irs.apparent_elevation)';
-% fix weight for northpole
-x0(1,7) = x0(2,7);
-x0(:,8) = weights_for_points_on_a_sphere_rectangle(irs.apparent_azimuth,...
-          irs.apparent_elevation,irs.distance)';
+
+% calculate aliasing frequency for the used grid << approximation >>
 conf.hprefhigh = aliasing_frequency_3d(x0(:,1:3));
 conf.hpreflow = 1;
+
 %% ===== Computation =====================================================
 % get virtual secondary source positions
-% x0_all = secondary_source_positions(L,conf);
 x0_all = x0;
 % Initialize new irs set
-irs_pw = irs;
-irs_pw.description = 'Extrapolated HRTF set containing plane waves';
-irs_pw.left = zeros(size(irs_pw.left));
-irs_pw.right = zeros(size(irs_pw.right));
-irs_pw.distance = 'Inf';
+far_field_irs = irs;
+far_field_irs.description = 'Extrapolated HRTF set containing plane waves';
+far_field_irs.left = zeros(size(far_field_irs.left));
+far_field_irs.right = zeros(size(far_field_irs.right));
+far_field_irs.distance = 'Inf';
 
 % Generate a irs set for all given angles
 for ii = 1:length(irs.apparent_azimuth)
-disp([ii length(irs.apparent_azimuth)])
+    disp([ii length(irs.apparent_azimuth)])
+
     % direction of plane wave
-    xs = -irs.distance(ii).*[cos(irs.apparent_azimuth(ii)).*cos(irs.apparent_elevation(ii)) ...
+    xs = -[cos(irs.apparent_azimuth(ii)).*cos(irs.apparent_elevation(ii)) ...
            sin(irs.apparent_azimuth(ii)).*cos(irs.apparent_elevation(ii)) ...
            sin(irs.apparent_elevation(ii))];
-       
     % calculate active virtual speakers
     x0 = secondary_source_selection(x0_all,xs,'pw');
 
-    % generate tapering window
-    win =ones(size(x0,1));
-
+    % calculate driving function
+    [~,delay,weight] = driving_function_imp_wfs(x0,xs,'pw',conf);
+        
     % sum up contributions from individual virtual speakers
-    for l=1:size(x0,1)
-        % Driving function to get weighting and delaying
-        [a,delay] = driving_function_imp_wfs_3d(x0(l,:),xs,'pw',conf);
-        dt = delay*fs + irs.distance(l)/conf.c*fs;%round(irs.distance(l)/conf.c*fs);
-        w=a*win(l);
+   for l=1:size(x0,1)
         % get IR for the secondary source position
         [phi,theta,r] = cart2sph(x0(l,1),x0(l,2),x0(l,3));
-        ir_tmp = get_ir(irs,phi,theta,r,conf.xref');
+        dt = delay(l)*fs;
+        ir_tmp = get_ir(irs,phi,theta,r,[0 0 0]);
         % truncate IR length
-        ir_tmp = fix_ir_length(ir_tmp,length(ir_tmp(:,1)),dt);
-%       irr = fix_ir_length(ir_tmp(:,2),length(ir_tmp(:,2)),dt);
-        irl = ir_tmp(:,1);
-        irr = ir_tmp(:,2);
+        irl = fix_ir_length(ir_tmp(:,1),length(ir_tmp(:,1)),0);
+        irr = fix_ir_length(ir_tmp(:,2),length(ir_tmp(:,2)),0);
         % delay and weight HRTFs
-        irs_pw.left(:,ii) = irs_pw.left(:,ii) + delayline(irl',dt,w,conf)';
-        irs_pw.right(:,ii) = irs_pw.right(:,ii) + delayline(irr',dt,w,conf)';
+        far_field_irs.left(:,ii) = far_field_irs.left(:,ii) + delayline(irl',dt,weight(l),conf)';
+        far_field_irs.right(:,ii) = far_field_irs.right(:,ii) + delayline(irr',dt,weight(l),conf)';
     end
 
 end
 
 %% ===== Pre-equalization ===============================================
-irs_pw.left = wfs_preequalization3d(irs_pw.left,conf);
-irs_pw.right = wfs_preequalization3d(irs_pw.right,conf);
+conf.usehpre = 1;
+far_field_irs.left = wfs_preequalization3d(far_field_irs.left,conf);
+far_field_irs.right = wfs_preequalization3d(far_field_irs.right,conf);
