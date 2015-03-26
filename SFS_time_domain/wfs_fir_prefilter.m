@@ -79,9 +79,8 @@ fhigh = conf.wfs.hprefhigh; % Upper frequency limit of preequalization
 Nfilt=128;
 % Frequency axis
 f = linspace(0,fs/2,fs/10);
-% Find indices for frequencies in f smaller and nearest to fhigh and flow
-idxfhigh = max(find(f<fhigh));
-idxflow = max(find(f<flow));
+% Find indices for frequencies in f smaller and nearest to fhigh
+idxfhigh = find(f<fhigh, 1,'last');
 % Initialize response
 H = ones(1,length(f));
 
@@ -99,24 +98,24 @@ H = ones(1,length(f));
 %
 % Pre-equilization filter from flow to fhigh
 if strcmp('2.5D',dimension)
-    %           _______
-    %  H(f) = \|f/fhigh, for flow<=f<=fhigh
+    %            ____________
+    %         4 |flow^2+f^2
+    %  H(f) = \ |------------  for f <= fhigh
+    %          \|fhigh^2+f^2
     %
-    %  compare Wierstorf (2014), p. 25 (2.46)
-    %
-    H(idxflow:idxfhigh) = sqrt(f(idxflow:idxfhigh)./fhigh);
+    H(1:idxfhigh) = nthroot(...
+      (flow.^2 + f(1:idxfhigh).^2)./(fhigh.^2), 4);
 elseif strcmp('3D',dimension) || strcmp('2D',dimension)
-    %         
-    %  H(f) = f/fhigh, for flow<=f<=fhigh
+    %            ____________
+    %           |flow^2+f^2
+    %  H(f) = \ |------------  for f <= fhigh
+    %          \|fhigh^2+f^2
     %
-    %  compare Wierstorf (2014), p. 25 (2.45)
-    %
-    H(idxflow:idxfhigh) = f(idxflow:idxfhigh)./fhigh;
+    H(1:idxfhigh) = sqrt(...
+      (flow.^2 + f(1:idxfhigh).^2)./(fhigh.^2));
 else
     error('%s: %s is not a valid conf.dimension entry',upper(mfilename));
 end
-% % Set the response for idxf < idxflow to the value at idxflow
-H(1:idxflow) = H(idxflow)*ones(1,idxflow);
 
 % Compute filter
 hpre = firls(Nfilt,2*f/fs,H);
