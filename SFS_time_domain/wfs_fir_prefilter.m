@@ -98,21 +98,21 @@ H = ones(1,length(f));
 %
 % Pre-equilization filter from flow to fhigh
 if strcmp('2.5D',dimension)
-    %            ____________
-    %         4 |flow^2+f^2
-    %  H(f) = \ |------------  for f <= fhigh
-    %          \|fhigh^2+f^2
+    %            _______________
+    %         4 |  flow^2+f^2
+    %  H(f) = \ |---------------  for f <= fhigh
+    %          \|flow^2+fhigh^2
     %
     H(1:idxfhigh) = nthroot(...
-      (flow.^2 + f(1:idxfhigh).^2)./(fhigh.^2), 4);
+      (flow.^2 + f(1:idxfhigh).^2)./(flow.^2 +fhigh.^2), 4);
 elseif strcmp('3D',dimension) || strcmp('2D',dimension)
-    %            ____________
-    %           |flow^2+f^2
-    %  H(f) = \ |------------  for f <= fhigh
-    %          \|fhigh^2+f^2
+    %            _______________
+    %           |  flow^2+f^2
+    %  H(f) = \ |---------------  for f <= fhigh
+    %          \|flow^2+fhigh^2
     %
     H(1:idxfhigh) = sqrt(...
-      (flow.^2 + f(1:idxfhigh).^2)./(fhigh.^2));
+      (flow.^2 + f(1:idxfhigh).^2)./(flow.^2 +fhigh.^2));
 else
     error('%s: %s is not a valid conf.dimension entry',upper(mfilename));
 end
