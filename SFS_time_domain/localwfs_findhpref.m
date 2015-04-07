@@ -76,8 +76,7 @@ if strcmp('2.5D',dimension)
     %          \|   flow^2+f^2
     %
     %  H(flow),/H(0) = 1/sqrt(2)
-    flowidx1 = find(H >= 1/sqrt(2), 1, 'last');
-    flowidx2 = find(H <= 1/sqrt(2), 1, 'first');
+    Xfilt = @(x, xlow) sqrt( (xlow.^2)./(xlow.^2 + x.^2));
 
 elseif strcmp('3D',dimension) || strcmp('2D',dimension)
     % Model of local WFS spectrum without prefilter:
@@ -87,18 +86,16 @@ elseif strcmp('3D',dimension) || strcmp('2D',dimension)
     %           flow^2+f^2
     %
     %  H(flow)./H(0) = 1/sqrt(2)
-    
-    flowidx1 = find(H >= 1/2, 1, 'last');
-    flowidx2 = find(H <= 1/2, 1, 'first');    
+    Xfilt = @(x, xlow) (xlow.^2)./(xlow.^2 + x.^2);
 else
     error('%s: %s is not a valid conf.dimension entry',upper(mfilename));
 end
 
-% Compute
-hpreflow = f(flowidx1);
-if flowidx1 ~= flowidx2
-  hpreflow = hpreflow + ...
-    f0 / ( H(flowidx2) - H(flowidx1) ) * ( 1./sqrt(2) - H(flowidx1) );
-end
-  
+flowidx = find(H <= Xfilt(1,1), 1, 'first');
+hpreflow = f(flowidx);
+
+fhighidx = flowidx - 1 + ...
+  find(H(flowidx:end) >= Xfilt(f(flowidx:end), hpreflow), 1, 'first');
+hprefhigh = f(fhighidx);
+
 end
