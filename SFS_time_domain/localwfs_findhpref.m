@@ -58,7 +58,6 @@ dimension = conf.dimension; % dimensionality
 conf.wfs.usehpre = false;     % no prefilter
 conf.localsfs.wfs = conf.wfs;
 %% ===== Variables ======================================================
-f0 = fs/N;                  % Spectral resolution
 irs = dummy_irs(N);         % Impulse responses
 
 %% ===== Computation ====================================================
