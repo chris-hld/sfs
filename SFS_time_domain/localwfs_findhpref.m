@@ -95,6 +95,11 @@ hpreflow = f(flowidx);
 
 fhighidx = flowidx - 1 + ...
   find(H(flowidx:end) >= Xfilt(f(flowidx:end), hpreflow), 1, 'first');
-hprefhigh = f(fhighidx);
+  
+if isempty(fhighidx)
+  hprefhigh = fs/2;
+else
+  hprefhigh = f(fhighidx);
+end 
 
 end

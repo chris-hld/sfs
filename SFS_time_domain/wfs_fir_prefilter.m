@@ -80,7 +80,7 @@ Nfilt=128;
 % Frequency axis
 f = linspace(0,fs/2,fs/10);
 % Find indices for frequencies in f smaller and nearest to fhigh
-idxfhigh = find(f<fhigh, 1,'last');
+idxfhigh = find(f<=fhigh, 1,'last');
 % Initialize response
 H = ones(1,length(f));
 
